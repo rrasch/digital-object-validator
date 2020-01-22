@@ -4,8 +4,45 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-// 	"regexp"
+	"regexp"
+	"sort"
 )
+
+
+func IsPreservationWorkflow(files []string) bool {
+	reMaster := regexp.MustCompile("_m.tif$")
+	reDMaker := regexp.MustCompile("_d.tif$")
+	numMaster := 0
+	numDMaker := 0
+	for i :=1; i < len(files); i++ {
+		if reMaster.MatchString(files[i]) {
+			numMaster++
+		} else if reDMaker.MatchString(files[i]) {
+			numDMaker++
+		}
+	}
+	return numMaster > 0 && numDMaker > 0
+}
+
+
+
+func OSReadDir(root string) ([]string, error) {
+	var files []string
+	f, err := os.Open(root)
+	if err != nil {
+		return files, err
+	}
+	fileInfo, err := f.Readdir(-1)
+	f.Close()
+	if err != nil {
+		return files, err
+	}
+	for _, file := range fileInfo {
+		files = append(files, file.Name())
+	}
+	sort.Strings(files)
+	return files, nil
+}
 
 
 func Validate(dir string) {
@@ -15,6 +52,19 @@ func Validate(dir string) {
 	}
 	foo := filepath.Base(abs)
 	fmt.Println(foo)
+
+	files, err := OSReadDir(abs)
+	if err != nil {
+		panic(err)
+	}
+
+	for _, file := range files {
+		fmt.Println(file)
+	}
+
+	if IsPreservationWorkflow(files) {
+		fmt.Println("YES")
+	}
 
 }
 
