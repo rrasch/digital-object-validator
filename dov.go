@@ -14,7 +14,7 @@ func IsPreservationWorkflow(files []string) bool {
 	reDMaker := regexp.MustCompile(`_d\.tif$`)
 	numMaster := 0
 	numDMaker := 0
-	for i :=1; i < len(files); i++ {
+	for i := 0; i < len(files); i++ {
 		if reMaster.MatchString(files[i]) {
 			numMaster++
 		} else if reDMaker.MatchString(files[i]) {
@@ -22,6 +22,25 @@ func IsPreservationWorkflow(files []string) bool {
 		}
 	}
 	return numMaster > 0 && numDMaker > 0
+}
+
+
+func ValidateAccess(id string, files []string) {
+	for i, file := range files {
+		expected := fmt.Sprintf("%s_%06d.tif", id, i)
+		fmt.Println(expected)
+		fmt.Println(file)
+	}
+}
+
+
+func ValidateBookEye(id string, files []string) {
+
+}
+
+
+func ValidatePreservation(id string, files []string) {
+
 }
 
 
@@ -38,7 +57,8 @@ func GetWorkflow(files []string) string {
 	numDMaker   := 0
 	numNumbered := 0
 	numEOC      := 0
-	for i :=1; i < len(files); i++ {
+	for i := 0; i < len(files); i++ {
+		fmt.Println("files", i, files[i])
 		if reTif.MatchString(files[i]) {
 			numTif++
 			if reMaster.MatchString(files[i]) {
@@ -52,6 +72,11 @@ func GetWorkflow(files []string) string {
 			numEOC++
 		}
 	}
+	fmt.Println("tifs:", numTif)
+	fmt.Println("masters:", numMaster)
+	fmt.Println("dmakers:", numDMaker)
+	fmt.Println("numbered tifs:", numNumbered)
+	fmt.Println("eoc files:", numEOC)
 	if numTif > 0 && numTif == numNumbered {
 		if numEOC == 1 {
 			workflow = "bookeye"
@@ -76,8 +101,11 @@ func OSReadDir(root string) ([]string, error) {
 	if err != nil {
 		return files, err
 	}
+	reTif := regexp.MustCompile(`\.tif$`)
 	for _, file := range fileInfo {
-		files = append(files, file.Name())
+		if reTif.MatchString(file.Name()) {
+			files = append(files, file.Name())
+		}
 	}
 	sort.Strings(files)
 	return files, nil
@@ -101,6 +129,8 @@ func Validate(dir string) {
 		fmt.Println(file)
 	}
 
+// 	ValidateAccess("nyu_aco001143", files)
+
 	fmt.Println("Workflow:", GetWorkflow(files))
 }
 
@@ -108,11 +138,11 @@ func Validate(dir string) {
 func main() {
 
 	if len(os.Args) < 2 {
-		fmt.Println("Usage: ", os.Args[0], "DIRECTORY...")
+		fmt.Println("Usage:", os.Args[0], "DIRECTORY...")
 		os.Exit(1)
 	}
 
-	for i :=1; i < len(os.Args); i++ {
+	for i := 1; i < len(os.Args); i++ {
 		dir :=  os.Args[i]
 		fmt.Println("directory:", dir)
 		if _, err := os.Stat(dir); err == nil {
