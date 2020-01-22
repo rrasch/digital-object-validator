@@ -10,8 +10,8 @@ import (
 
 
 func IsPreservationWorkflow(files []string) bool {
-	reMaster := regexp.MustCompile("_m.tif$")
-	reDMaker := regexp.MustCompile("_d.tif$")
+	reMaster := regexp.MustCompile(`_m\.tif$`)
+	reDMaker := regexp.MustCompile(`_d\.tif$`)
 	numMaster := 0
 	numDMaker := 0
 	for i :=1; i < len(files); i++ {
@@ -24,6 +24,45 @@ func IsPreservationWorkflow(files []string) bool {
 	return numMaster > 0 && numDMaker > 0
 }
 
+
+func GetWorkflow(files []string) string {
+	workflow := ""
+
+	reTif      := regexp.MustCompile(`\.tif$`)
+	reMaster   := regexp.MustCompile(`_m\.tif$`)
+	reDMaker   := regexp.MustCompile(`_d\.tif$`)
+	reNumbered := regexp.MustCompile(`[0-9]{6}\.tif$`)
+	reEOC      := regexp.MustCompile(`(?i)eoc\.csv$`)
+	numTif      := 0
+	numMaster   := 0
+	numDMaker   := 0
+	numNumbered := 0
+	numEOC      := 0
+	for i :=1; i < len(files); i++ {
+		if reTif.MatchString(files[i]) {
+			numTif++
+			if reMaster.MatchString(files[i]) {
+				numMaster++
+			} else if reDMaker.MatchString(files[i]) {
+				numDMaker++
+			} else if reNumbered.MatchString(files[i]) {
+				numNumbered++
+			}
+		} else if reEOC.MatchString(files[i]) {
+			numEOC++
+		}
+	}
+	if numTif > 0 && numTif == numNumbered {
+		if numEOC == 1 {
+			workflow = "bookeye"
+		} else {
+			workflow = "access"
+		}
+	} else if numMaster > 0 && numDMaker > 0 {
+		workflow = "preservation"
+	}
+	return workflow
+}
 
 
 func OSReadDir(root string) ([]string, error) {
@@ -62,10 +101,7 @@ func Validate(dir string) {
 		fmt.Println(file)
 	}
 
-	if IsPreservationWorkflow(files) {
-		fmt.Println("YES")
-	}
-
+	fmt.Println("Workflow:", GetWorkflow(files))
 }
 
 
