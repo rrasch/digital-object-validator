@@ -2,10 +2,12 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"regexp"
 	"sort"
+	"strconv"
 )
 
 
@@ -25,11 +27,24 @@ func IsPreservationWorkflow(files []string) bool {
 }
 
 
-func ValidateAccess(id string, files []string) {
-	for i, file := range files {
+func ValidateAccess(id string, files []string) bool {
+// 	for i, file := range files {
+// 		expected := fmt.Sprintf("%s_%06d.tif", id, i)
+// 		if file.Name() != expected {
+// 			fmt.Println("Found", file.Name(), "but was expecting", expected)
+// 		}
+// 
+// 		fmt.Println(expected)
+// 		fmt.Println(file)
+// 	}
+	reNumbered := regexp.MustCompile(`([0-9]{6})\.tif$`)
+	found := reNumbered.FindStringSubmatch(files[len(files-1)])
+	lastIndex, err := strconv.Atoi(found[1])
+	if err != nil {
+		panic(err)
+	}
+	for i := 1; i < lastIndex; i++ {
 		expected := fmt.Sprintf("%s_%06d.tif", id, i)
-		fmt.Println(expected)
-		fmt.Println(file)
 	}
 }
 
@@ -50,7 +65,7 @@ func GetWorkflow(files []string) string {
 	reTif      := regexp.MustCompile(`\.tif$`)
 	reMaster   := regexp.MustCompile(`_m\.tif$`)
 	reDMaker   := regexp.MustCompile(`_d\.tif$`)
-	reNumbered := regexp.MustCompile(`[0-9]{6}\.tif$`)
+	reNumbered := regexp.MustCompile(`([0-9]{6})\.tif$`)
 	reEOC      := regexp.MustCompile(`(?i)eoc\.csv$`)
 	numTif      := 0
 	numMaster   := 0
@@ -101,11 +116,11 @@ func OSReadDir(root string) ([]string, error) {
 	if err != nil {
 		return files, err
 	}
-	reTif := regexp.MustCompile(`\.tif$`)
+// 	reTif := regexp.MustCompile(`\.tif$`)
 	for _, file := range fileInfo {
-		if reTif.MatchString(file.Name()) {
+// 		if reTif.MatchString(file.Name()) {
 			files = append(files, file.Name())
-		}
+// 		}
 	}
 	sort.Strings(files)
 	return files, nil
@@ -117,8 +132,8 @@ func Validate(dir string) {
 	if err == nil {
 		fmt.Println("Absolute:", abs)
 	}
-	foo := filepath.Base(abs)
-	fmt.Println(foo)
+	id := filepath.Base(abs)
+	fmt.Println(id)
 
 	files, err := OSReadDir(abs)
 	if err != nil {
@@ -129,9 +144,19 @@ func Validate(dir string) {
 		fmt.Println(file)
 	}
 
-// 	ValidateAccess("nyu_aco001143", files)
+	workflow := GetWorkflow(files)
+	fmt.Println("Workflow:", workflow)
+	log.Print("Workflow:", workflow)
 
-	fmt.Println("Workflow:", GetWorkflow(files))
+	switch workflow {
+	case "access":
+		ValidateAccess(id, files)
+	case "bookeye":
+		ValidateBookEye(id, files)
+	case "preservation":
+		ValidatePreservation(id, files)
+	}
+
 }
 
 
