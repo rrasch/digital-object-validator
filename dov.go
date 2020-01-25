@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
 	"sort"
@@ -27,17 +28,37 @@ func IsPreservationWorkflow(files []string) bool {
 }
 
 
-func ValidateAccess(id string, files []string) bool {
-// 	for i, file := range files {
 // 		expected := fmt.Sprintf("%s_%06d.tif", id, i)
+//
 // 		if file.Name() != expected {
 // 			fmt.Println("Found", file.Name(), "but was expecting", expected)
 // 		}
-// 
-// 		fmt.Println(expected)
-// 		fmt.Println(file)
-// 	}
-	reNumbered := regexp.MustCompile(`([0-9]{6})\.tif$`)
+
+func ValidateAccess(id string, files []string) bool {
+
+	reTif      := regexp.MustCompile(`\.tif$`)
+	reNumbered := regexp.MustCompile('^' + id + `_(\d{6})\.tif$`)
+
+	numErrors := 0
+
+	numbered = make(map[string]int)
+
+	var mislabeled []string
+
+	var missing []string
+
+	for _, file := range files {
+		if reNumbered.MatchString(file.Name()) {
+			numbered[file.Name()] = 1;
+		} else if reTif.MatchString(file.Name()) {
+			append(mislabeled, file.Name())
+			numErrors++
+			fmt.Println(file.Name(), "found but not named properly.")
+		} else {
+			fmt.Println("Unknown file found:", file.Name())
+		}
+	}
+
 	found := reNumbered.FindStringSubmatch(files[len(files-1)])
 	lastIndex, err := strconv.Atoi(found[1])
 	if err != nil {
@@ -45,7 +66,44 @@ func ValidateAccess(id string, files []string) bool {
 	}
 	for i := 1; i < lastIndex; i++ {
 		expected := fmt.Sprintf("%s_%06d.tif", id, i)
+		if _, found := numbered[expected]; !found {
+			append(missing, expected)
+			numErrors++
+			fmt.Println("Missing", expected)
+		}
 	}
+}
+
+
+func FindMissing(regexStr Regex, files []string) []string {
+	re := Regex.MustCopmile(regexStr)
+	reSeqNum := regexp.MustCompile(`\d{6}`)
+
+	var missing []string
+
+	for i := len(files) - 1; i >= 0; i-- {
+		found := reSeqNum.FindStringSubmatch(files[i].Name())
+		if (found != nil) {
+			break
+		}
+	}
+
+// 	lastIndex, err := strconv.Atoi(found[1])
+// 	if err != nil {
+// 		panic(err)
+// 	}
+// 
+// 	for i := 1; i < lastIndex; i++ {
+// 		expected := fmt.Sprintf("%s_%06d.tif", id, i)
+// 		if _, found := numbered[expected]; !found {
+// 			append(missing, expected)
+// 			numErrors++
+// 			fmt.Println("Missing", expected)
+// 		}
+// 	}
+// 
+
+
 }
 
 
@@ -56,6 +114,12 @@ func ValidateBookEye(id string, files []string) {
 
 func ValidatePreservation(id string, files []string) {
 
+}
+
+
+func IsValidID (id string) bool {
+	reID := Regex.MustCompile(`^[0-9A-Za-z]+(_[0-9A-Za-z]+)*$`)
+	return reID.MatchString(id)
 }
 
 
@@ -135,6 +199,10 @@ func Validate(dir string) {
 	id := filepath.Base(abs)
 	fmt.Println(id)
 
+	if !isValidID(id) {
+		fmt.Println(id, "is not a valid identifier.")
+	}
+
 	files, err := OSReadDir(abs)
 	if err != nil {
 		panic(err)
@@ -157,6 +225,16 @@ func Validate(dir string) {
 		ValidatePreservation(id, files)
 	}
 
+}
+
+
+func IsTif(file string) {
+	out, err := exec.Command("file", file).CombinedOutput()
+	if err != nil {
+		fmt.Printf("%s", err)
+	}
+	output := string(out[:])
+	fmt.Println(output)
 }
 
 
