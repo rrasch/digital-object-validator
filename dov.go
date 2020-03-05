@@ -9,6 +9,7 @@ import (
 	"regexp"
 	"sort"
 	"strconv"
+	"strings"
 )
 
 
@@ -75,36 +76,78 @@ func ValidateAccess(id string, files []string) bool {
 }
 
 
-func FindMissing(regexStr Regex, files []string) []string {
-	re := Regex.MustCopmile(regexStr)
-	reSeqNum := regexp.MustCompile(`\d{6}`)
+func FindMissing(regexStr string, files []string, seqLen int) []string {
+	reNumbered := Regex.MustCopmile(regexStr)
+
+	numbered = make(map[string]int)
 
 	var missing []string
 
-	for i := len(files) - 1; i >= 0; i-- {
-		found := reSeqNum.FindStringSubmatch(files[i].Name())
-		if (found != nil) {
-			break
+	var theRest []string
+
+	var maxIndex int
+
+	var matches []string
+
+	for _, file := range files {
+		matches = reNumbered.FindStringSubmatch(file.Name())
+		if matches != nil {
+			i, err := strconv.Atoi(matches[2])
+			if err != nil {
+				panic(err)
+			}
+			if i > max {
+				maxIndex = i
+			}
+			numbered[file.Name()] = i;
+		} else {
+			append(theRest, file.Name())
 		}
 	}
 
-// 	lastIndex, err := strconv.Atoi(found[1])
-// 	if err != nil {
-// 		panic(err)
-// 	}
-// 
-// 	for i := 1; i < lastIndex; i++ {
-// 		expected := fmt.Sprintf("%s_%06d.tif", id, i)
-// 		if _, found := numbered[expected]; !found {
-// 			append(missing, expected)
-// 			numErrors++
-// 			fmt.Println("Missing", expected)
-// 		}
-// 	}
-// 
+	// Found no numbered files
+	if numbered == nil {
+		return NIL
+	}
 
+	format = "%s%0" + seqLen + "d_%s.tif"
 
+	imageTypes = ["m", "d"]
+
+	for i := 1; i < maxIndex; i++ {
+		for _, imgType := range imageTypes {
+			expected := fmt.Sprintf(format, matches[1], imgType)
+			if _, found := numbered[expected]; !found {
+				append(missing, expected)
+				fmt.Println("Missing", expected)
+			}
+		}
+	}
+
+	if missing != nill {
+		fmt.Println("Too many missing files.")
+	}
+
+	return theRest
 }
+
+func ValidateFrontMatter(id string, files []string) {
+	regex := fmt.Sprintf(`^(%s_fr)(\d{2,3})_[md].tif$`, id)
+	FindMissing(regex, files, 2)
+}
+
+func ValidateMiddle(id string) {
+	regex := fmt.Sprintf(`^(%s_)(\d{6})((?:_\d{2}){0,2})_[md].tif$`, id)
+	FindMissing(regex, files, 6)
+}
+
+func ValidateBackMatter(id string) {
+	regex := fmt.Sprintf(`^(%s_bk)(\d{2,3})_[md].tif$`, id)
+	FindMissing(regex, files, 2
+}
+
+
+
 
 
 func ValidateBookEye(id string, files []string) {
@@ -245,8 +288,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	for i := 1; i < len(os.Args); i++ {
-		dir :=  os.Args[i]
+// 	for i := 1; i < len(os.Args); i++ {
+	for _, dir := range os.Args[1:]  {
+// 		dir :=  os.Args[i]
 		fmt.Println("directory:", dir)
 		if _, err := os.Stat(dir); err == nil {
 			Validate(dir)
