@@ -131,6 +131,79 @@ func FindMissing(regexStr string, files []string, seqLen int) []string {
 	return theRest
 }
 
+
+
+
+
+func FindMissing(regexStr string, files []string, seqLen int) []string {
+
+
+	regexStr := fmt.Sprintf(`^(%s_)(\d{6})((?:_\d{2}){0,2})_[md].tif$`, id)
+
+	reNumbered := Regex.MustCopmile(regexStr)
+
+	numbered = make(map[string]int)
+
+	var missing []string
+
+	var theRest []string
+
+	var maxIndex int
+
+	var matches []string
+
+	for _, file := range files {
+		matches = reNumbered.FindStringSubmatch(file.Name())
+		if matches != nil {
+			i, err := strconv.Atoi(matches[2])
+			if err != nil {
+				panic(err)
+			}
+			if i > max {
+				maxIndex = i
+			}
+			numbered[file.Name()] = i;
+		} else {
+			append(theRest, file.Name())
+		}
+	}
+
+	// Found no numbered files
+	if numbered == nil {
+		return NIL
+	}
+
+	format = "%s%0" + seqLen + "d_%s.tif"
+
+	imageTypes = ["m", "d"]
+
+	for i := 1; i < maxIndex; i++ {
+		for _, imgType := range imageTypes {
+			expected := fmt.Sprintf(format, matches[1], imgType)
+			if _, found := numbered[expected]; !found {
+				append(missing, expected)
+				fmt.Println("Missing", expected)
+			}
+		}
+	}
+
+	if missing != nill {
+		fmt.Println("Too many missing files.")
+	}
+
+	return theRest
+}
+
+
+
+
+
+
+
+
+
+
+
 func ValidateFrontMatter(id string, files []string) {
 	regex := fmt.Sprintf(`^(%s_fr)(\d{2,3})_[md].tif$`, id)
 	FindMissing(regex, files, 2)
