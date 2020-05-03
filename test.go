@@ -137,24 +137,53 @@ func main () {
 			mymap[pageNum] = foo
 		}
 
-		fmt.Println(mymap)
+		fmt.Println("mymap:", mymap)
 
 	}
 
 
-	format = "%s_%06d_%s.tif"
+	format1 := "%s_%06d_%s.tif"
+	format2 := "%s_%06d_%02d_%s.tif"
+	format3 := "%s_%06d_%02d_%02d_%s.tif"
 
-	imageTypes = ["m", "d"]
+// 	imageTypes = ["m", "d"]
 
-	for i := 1; i < maxIndex; i++ {
-		for _, imgType := range imageTypes {
-			expected := fmt.Sprintf(format, "nyu", imgType)
-			if _, found := numbered[expected]; !found {
-				append(missing, expected)
-				fmt.Println("Missing", expected)
+	fmt.Println("max page num:", maxPageNum)
+
+	var expected []string
+
+	id := "nyu"
+
+	for i := 1; i <= maxPageNum; i++ {
+		foo, exists := mymap[i]
+		if !exists {
+			expected = append(expected, fmt.Sprintf(format1, id, i, "d"))
+		} else {
+			for j := 1; j <= foo[0]; j++ {
+				if foo[1] == 0 {
+					expected = append(expected, fmt.Sprintf(format2, id, i, j, "d"))
+				} else {
+					for k:= 1; k <= foo[1]; k++ {
+						expected = append(expected, fmt.Sprintf(format3, id, i, j, k, "d"))
+					}
+				}
 			}
 		}
 	}
+
+	for _, file := range expected {
+		fmt.Println(file)
+	}
+
+
+
+// 		for _, imgType := range imageTypes {
+// 			expected := fmt.Sprintf(format, "nyu", imgType)
+// 			if _, found := numbered[expected]; !found {
+// 				append(missing, expected)
+// 				fmt.Println("Missing", expected)
+// 			}
+// 		}
 
 
 
