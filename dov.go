@@ -9,7 +9,7 @@ import (
 	"regexp"
 	"sort"
 	"strconv"
-	"strings"
+	//"strings"
 )
 
 
@@ -38,29 +38,29 @@ func IsPreservationWorkflow(files []string) bool {
 func ValidateAccess(id string, files []string) bool {
 
 	reTif      := regexp.MustCompile(`\.tif$`)
-	reNumbered := regexp.MustCompile('^' + id + `_(\d{6})\.tif$`)
+	reNumbered := regexp.MustCompile("^" + id + `_(\d{6})\.tif$`)
 
 	numErrors := 0
 
-	numbered = make(map[string]int)
+	numbered := make(map[string]int)
 
 	var mislabeled []string
 
 	var missing []string
 
 	for _, file := range files {
-		if reNumbered.MatchString(file.Name()) {
-			numbered[file.Name()] = 1;
-		} else if reTif.MatchString(file.Name()) {
-			append(mislabeled, file.Name())
+		if reNumbered.MatchString(file) {
+			numbered[file] = 1;
+		} else if reTif.MatchString(file) {
+			mislabeled = append(mislabeled, file)
 			numErrors++
-			fmt.Println(file.Name(), "found but not named properly.")
+			fmt.Println(file, "found but not named properly.")
 		} else {
-			fmt.Println("Unknown file found:", file.Name())
+			fmt.Println("Unknown file found:", file)
 		}
 	}
 
-	found := reNumbered.FindStringSubmatch(files[len(files-1)])
+	found := reNumbered.FindStringSubmatch(files[len(files)-1])
 	lastIndex, err := strconv.Atoi(found[1])
 	if err != nil {
 		panic(err)
@@ -68,18 +68,23 @@ func ValidateAccess(id string, files []string) bool {
 	for i := 1; i < lastIndex; i++ {
 		expected := fmt.Sprintf("%s_%06d.tif", id, i)
 		if _, found := numbered[expected]; !found {
-			append(missing, expected)
+			missing = append(missing, expected)
 			numErrors++
 			fmt.Println("Missing", expected)
 		}
 	}
+	if numErrors > 0 {
+		return true;
+	} else {
+		return false;
+	}
 }
 
 
-func FindMissing(regexStr string, files []string, seqLen int) []string {
-	reNumbered := Regex.MustCopmile(regexStr)
+func FindMissingRegex(regexStr string, files []string, seqLen int) []string {
+	reNumbered := regexp.MustCompile(regexStr)
 
-	numbered = make(map[string]int)
+	numbered := make(map[string]int)
 
 	var missing []string
 
@@ -90,41 +95,41 @@ func FindMissing(regexStr string, files []string, seqLen int) []string {
 	var matches []string
 
 	for _, file := range files {
-		matches = reNumbered.FindStringSubmatch(file.Name())
+		matches = reNumbered.FindStringSubmatch(file)
 		if matches != nil {
 			i, err := strconv.Atoi(matches[2])
 			if err != nil {
 				panic(err)
 			}
-			if i > max {
+			if i > maxIndex {
 				maxIndex = i
 			}
-			numbered[file.Name()] = i;
+			numbered[file] = i;
 		} else {
-			append(theRest, file.Name())
+			theRest = append(theRest, file)
 		}
 	}
 
 	// Found no numbered files
 	if numbered == nil {
-		return NIL
+		return nil
 	}
 
-	format = "%s%0" + seqLen + "d_%s.tif"
+	format := "%s%0" + strconv.Itoa(seqLen) + "d_%s.tif"
 
-	imageTypes = ["m", "d"]
+	imageTypes := [2]string{"m", "d"}
 
 	for i := 1; i < maxIndex; i++ {
 		for _, imgType := range imageTypes {
 			expected := fmt.Sprintf(format, matches[1], imgType)
 			if _, found := numbered[expected]; !found {
-				append(missing, expected)
+				missing = append(missing, expected)
 				fmt.Println("Missing", expected)
 			}
 		}
 	}
 
-	if missing != nill {
+	if missing != nil {
 		fmt.Println("Too many missing files.")
 	}
 
@@ -135,14 +140,14 @@ func FindMissing(regexStr string, files []string, seqLen int) []string {
 
 
 
-func FindMissing(regexStr string, files []string, seqLen int) []string {
+func FindMissing(id string, files []string, seqLen int) []string {
 
 
 	regexStr := fmt.Sprintf(`^(%s_)(\d{6})((?:_\d{2}){0,2})_[md].tif$`, id)
 
-	reNumbered := Regex.MustCopmile(regexStr)
+	reNumbered := regexp.MustCompile(regexStr)
 
-	numbered = make(map[string]int)
+	numbered := make(map[string]int)
 
 	var missing []string
 
@@ -153,41 +158,41 @@ func FindMissing(regexStr string, files []string, seqLen int) []string {
 	var matches []string
 
 	for _, file := range files {
-		matches = reNumbered.FindStringSubmatch(file.Name())
+		matches = reNumbered.FindStringSubmatch(file)
 		if matches != nil {
 			i, err := strconv.Atoi(matches[2])
 			if err != nil {
 				panic(err)
 			}
-			if i > max {
+			if i > maxIndex {
 				maxIndex = i
 			}
-			numbered[file.Name()] = i;
+			numbered[file] = i;
 		} else {
-			append(theRest, file.Name())
+			theRest = append(theRest, file)
 		}
 	}
 
 	// Found no numbered files
 	if numbered == nil {
-		return NIL
+		return nil
 	}
 
-	format = "%s%0" + seqLen + "d_%s.tif"
+	format := "%s%0" + strconv.Itoa(seqLen) + "d_%s.tif"
 
-	imageTypes = ["m", "d"]
+	imageTypes := [2]string{"m", "d"}
 
 	for i := 1; i < maxIndex; i++ {
 		for _, imgType := range imageTypes {
 			expected := fmt.Sprintf(format, matches[1], imgType)
 			if _, found := numbered[expected]; !found {
-				append(missing, expected)
+				missing = append(missing, expected)
 				fmt.Println("Missing", expected)
 			}
 		}
 	}
 
-	if missing != nill {
+	if missing != nil {
 		fmt.Println("Too many missing files.")
 	}
 
@@ -206,17 +211,17 @@ func FindMissing(regexStr string, files []string, seqLen int) []string {
 
 func ValidateFrontMatter(id string, files []string) {
 	regex := fmt.Sprintf(`^(%s_fr)(\d{2,3})_[md].tif$`, id)
-	FindMissing(regex, files, 2)
+	FindMissingRegex(regex, files, 2)
 }
 
-func ValidateMiddle(id string) {
+func ValidateMiddle(id string, files []string) {
 	regex := fmt.Sprintf(`^(%s_)(\d{6})((?:_\d{2}){0,2})_[md].tif$`, id)
-	FindMissing(regex, files, 6)
+	FindMissingRegex(regex, files, 6)
 }
 
-func ValidateBackMatter(id string) {
+func ValidateBackMatter(id string, files []string) {
 	regex := fmt.Sprintf(`^(%s_bk)(\d{2,3})_[md].tif$`, id)
-	FindMissing(regex, files, 2
+	FindMissingRegex(regex, files, 2)
 }
 
 
@@ -234,7 +239,7 @@ func ValidatePreservation(id string, files []string) {
 
 
 func IsValidID (id string) bool {
-	reID := Regex.MustCompile(`^[0-9A-Za-z]+(_[0-9A-Za-z]+)*$`)
+	reID := regexp.MustCompile(`^[0-9A-Za-z]+(_[0-9A-Za-z]+)*$`)
 	return reID.MatchString(id)
 }
 
@@ -315,7 +320,7 @@ func Validate(dir string) {
 	id := filepath.Base(abs)
 	fmt.Println(id)
 
-	if !isValidID(id) {
+	if !IsValidID(id) {
 		fmt.Println(id, "is not a valid identifier.")
 	}
 
